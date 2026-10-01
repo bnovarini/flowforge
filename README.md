@@ -40,7 +40,7 @@ Changing geometry resets the flow so stale velocities do not remain inside newly
 
 ## Solver
 
-A fixed **64 x 32 x 32** Eulerian velocity grid is stored as an **8 x 4 atlas of 32 depth slices** in floating-point WebGL render targets. Each simulation step performs:
+A **128 x 64 x 64** Eulerian velocity grid (default "High" grid quality; a **64 x 32 x 32** "Standard" option is in the UI, or use `?grid=standard`) is stored as an atlas of depth slices (8 x 8 at 128 x 64 x 64 high, 8 x 4 at standard) in floating-point WebGL render targets. Each simulation step performs:
 
 1. Semi-Lagrangian velocity advection with trilinear sampling, followed by a clamped MacCormack correction at reduced strength (0.15) to cut numerical diffusion. At full strength the correction produced speckle noise in the rendered smoke.
 2. An explicit viscosity/diffusion update.
@@ -90,13 +90,13 @@ Built-in stylized **car**, **Formula 1 car**, **cow**, and **golf ball** are sin
 
 The selected 3D obstacle gets a **qualitative drag proxy**, split into pressure and shear terms over exposed voxel faces. Pressure is the projection solver's pressure potential; shear uses a one-cell tangential velocity gradient. Values are uncalibrated grid units, not Newtons or credible drag coefficients. Overlapping solids use a voxel union with ownership by the last overlapping obstacle; individual-force attribution at overlaps is therefore approximate.
 
-The 3D grid remains 64 x 32 x 32. Increasing it or adding vorticity confinement alone would not establish realistic 3D shedding. Effective Reynolds number is well below the nominal ratio of speed times size over the viscosity slider, because semi-Lagrangian advection adds its own numerical viscosity. Measured wakes at default settings settle to a steady state rather than shed. The next physics work would be a staggered grid, grid/time/domain convergence, improved inflow/outflow, and comparison against matched reference cases.
+The 3D grid defaults to 128 x 64 x 64 (obstacles, inlet, viscosity and confinement are rescaled so slider meanings stay the same; force readouts are an uncalibrated proxy, rescaled to match). Imports voxelize about 8x slower at the high grid and switching grid quality reloads the page. Doubling the grid alone does not establish realistic 3D shedding. Increasing it or adding vorticity confinement alone would not establish realistic 3D shedding. Effective Reynolds number is well below the nominal ratio of speed times size over the viscosity slider, because semi-Lagrangian advection adds its own numerical viscosity. Measured wakes at default settings settle to a steady state rather than shed. The next physics work would be a staggered grid, grid/time/domain convergence, improved inflow/outflow, and comparison against matched reference cases.
 
 A **NACA 0012-style symmetric extruded airfoil** is also built in (12% thickness, closed trailing edge). It is aligned to the flow and has no angle-of-attack control yet. At the default coarse 3D resolution its thickness is only a few cells: do not infer lift or airfoil performance from this view.
 
 ### Orientation and visible wake fix
 
-Flow is in +X, from left to right. Car/F1 noses and the cow's head now point upstream (-X); the same mirrored composite parts define both rendering and fluid voxels. The 3D shapes view includes an orange/blue center-plane overlay of the **computed velocity deficit**, making the low-speed region behind an obstacle visible when dense tracers hide it. This is a velocity-field slice, not a vorticity plot or proof of vortex shedding. The current 64 x 32 x 32 stable-fluids solver is still too diffusive for a validated shedding claim. Default inlet/viscosity remain unchanged.
+Flow is in +X, from left to right. Car/F1 noses and the cow's head now point upstream (-X); the same mirrored composite parts define both rendering and fluid voxels. The 3D shapes view includes an orange/blue center-plane overlay of the **computed velocity deficit**, making the low-speed region behind an obstacle visible when dense tracers hide it. This is a velocity-field slice, not a vorticity plot or proof of vortex shedding. The stable-fluids solver is still too diffusive for a validated shedding claim. Default inlet/viscosity remain unchanged.
 
 ## Visual smoke
 
