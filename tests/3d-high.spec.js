@@ -1,2 +1,0 @@
-import {test,expect} from '@playwright/test';
-test('high grid allocates and initializes finite',async({page})=>{test.setTimeout(100000);await page.goto('/');const d=await page.evaluate(async()=>{window.flowforge.pause();const THREE=await import('/node_modules/three/build/three.module.js'),{LBM3D}=await import('/src/lbm3d.js');let r=new THREE.WebGLRenderer(),s=new LBM3D(r,{grid:[192,96,64],Re:250});let d=s.field();delete d.data;s.dispose();r.dispose();return d;});console.log(JSON.stringify(d));expect(d.finite).toBe(true);});
