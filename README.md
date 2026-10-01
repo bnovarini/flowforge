@@ -100,7 +100,7 @@ Flow is in +X, from left to right. Car/F1 noses and the cow's head now point ups
 
 ## Visual smoke
 
-The stable-fluids view can display a ray-marched smoke volume. The scalar dye is injected just upstream of the first obstacle, transported through the computed velocity field with trilinear semi-Lagrangian advection, removed from solid voxels and faded slowly. The plume is a visual marker, not a second fluid or a mass-conserving density solve. It resets with geometry and flow. The source follows the first obstacle; multiple obstacles affect the same plume.
+The stable-fluids view can display a ray-marched smoke volume. The scalar dye is injected at the start of the grid (near the inlet, centered), independent of where obstacles are placed, transported through the computed velocity field with trilinear semi-Lagrangian advection, removed from solid voxels and faded slowly. The plume is a visual marker, not a second fluid or a mass-conserving density solve. It resets with geometry and flow. The source follows the first obstacle; multiple obstacles affect the same plume.
 
 "Visual swirl retention" adds vorticity confinement before pressure projection. This artistic force helps retain rotating flow on the coarse grid. It does not establish physically correct turbulence, Reynolds numbers or shedding frequencies. Setting it to zero restores the original velocity update. Tracers and the earlier velocity-deficit slice remain available.
 
