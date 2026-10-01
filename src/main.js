@@ -17,11 +17,47 @@ try {
  const arrow=new THREE.ArrowHelper(new THREE.Vector3(1,0,0),new THREE.Vector3(-5,16,16),9,'#68e1b6',2,1);scene.add(arrow);
  const solver=new FluidSolver(renderer);const shapes=[];let selected=0;let running=true;let serial=0;
  const meshFor=makeShape;
- function refresh(reset=true){shapes.forEach(s=>{if(s.mesh){scene.remove(s.mesh);disposeShape(s.mesh);}s.mesh=meshFor(s);scene.add(s.mesh);});solver.setShapes(shapes);if(reset)solver.reset();$('selected').innerHTML=shapes.map((s,i)=>`<option value="${i}">${(s.label||s.type).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')} ${s.id}</option>`).join('');$('selected').value=selected;const s=shapes[selected];['size','position','height','depth','remove','rotation-x','rotation-y','rotation-z'].forEach(id=>$(id).disabled=!s);if(s){s.rotation??=[0,0,0];['x','y','z'].forEach((axis,i)=>{$('rotation-'+axis).value=s.rotation[i];$('rotation-'+axis+'-value').textContent=s.rotation[i]+'°';});$('size').value=s.size;$('size-value').textContent=s.size;$('position').value=s.pos[0];$('height').value=s.pos[1];$('depth').value=s.pos[2];}$('add').disabled=shapes.length>=12;}
- function add(){if(shapes.length>=12)return;shapes.push({type:$('shape').value,geometry:$('shape').value==='airfoil'?airfoilGeometry():undefined,size:5,pos:[26+Math.min(shapes.length,3)*7,16,16],id:++serial});selected=shapes.length-1;refresh();}
- $('add').onclick=add;$('selected').onchange=e=>{selected=Number(e.target.value);refresh(false);};$('remove').onclick=()=>{const s=shapes[selected];if(!s)return;scene.remove(s.mesh);disposeShape(s.mesh);if(s.geometry)s.geometry.dispose();shapes.splice(selected,1);selected=Math.max(0,selected-1);refresh();};
- ['size','position','height','depth'].forEach((id,i)=>$(id).oninput=()=>{const s=shapes[selected];if(!s)return;if(i===0)s.size=+$(id).value;else s.pos[i-1]=+$(id).value;refresh();});
- ['x','y','z'].forEach((axis,i)=>$('rotation-'+axis).oninput=()=>{const s=shapes[selected];if(!s)return;s.rotation??=[0,0,0];s.rotation[i]=+$('rotation-'+axis).value;refresh();});
+ const BOUNDS={x:[8,56],y:[5,27],z:[5,27]};
+ const spec={size:[2,9],position:BOUNDS.x,height:BOUNDS.y,depth:BOUNDS.z,'rotation-x':[-180,180],'rotation-y':[-180,180],'rotation-z':[-180,180]};
+ const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+ const esc=t=>String(t).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+ const outline=new THREE.Box3Helper(new THREE.Box3(),'#68e1b6');outline.visible=false;scene.add(outline);
+ let dragMode='floor',drag=null;
+ function updateOutline(){const s=shapes[selected];if(s&&s.mesh){outline.box.setFromObject(s.mesh);outline.visible=true;}else outline.visible=false;}
+ function syncUI(){const s=shapes[selected];
+  $('selected').innerHTML=shapes.map((o,i)=>`<option value="${i}">${esc(o.label||o.type)} ${o.id}</option>`).join('');$('selected').value=selected;
+  $('chips').innerHTML=shapes.map((o,i)=>`<button class="chip${i===selected?' on':''}" data-i="${i}">${esc(o.label||o.type)} ${o.id}</button>`).join('')||'<span class="empty">No objects yet. Use + Add in the controls.</span>';
+  Object.keys(spec).forEach(id=>{$(id).disabled=!s;$('num-'+id).disabled=!s;});
+  ['remove','delete','dup','edit-nums','rot-x90','rot-y90','rot-z90','rot-reset'].forEach(id=>$(id).disabled=!s);
+  $('dup').disabled=!s||shapes.length>=12;
+  if(s){s.rotation??=[0,0,0];const v={size:s.size,position:s.pos[0],height:s.pos[1],depth:s.pos[2],'rotation-x':s.rotation[0],'rotation-y':s.rotation[1],'rotation-z':s.rotation[2]};
+   for(const id in v){$(id).value=v[id];$('num-'+id).value=+(+v[id]).toFixed(2);}
+   $('size-value').textContent=s.size;['x','y','z'].forEach((a,i)=>{$('rotation-'+a+'-value').textContent=s.rotation[i]+'°';});}
+  $('add').disabled=shapes.length>=12;$('mode').textContent=dragMode==='floor'?'Drag: floor':'Drag: height';updateOutline();}
+ function refresh(reset=true){shapes.forEach(s=>{if(s.mesh){scene.remove(s.mesh);disposeShape(s.mesh);}s.mesh=meshFor(s);s.mesh.traverse(o=>{o.userData.shape=s;});scene.add(s.mesh);});solver.setShapes(shapes);if(reset)solver.reset();syncUI();}
+ function freeSpot(){const c=[[26,16],[33,16],[40,16],[47,16],[26,10],[33,22],[40,10],[47,22],[19,16],[19,10],[19,22]];return c.find(([x,z])=>shapes.every(s=>Math.hypot(s.pos[0]-x,s.pos[2]-z)>=8))||[26,16];}
+ function add(){if(shapes.length>=12)return;const [x,z]=freeSpot();shapes.push({type:$('shape').value,geometry:$('shape').value==='airfoil'?airfoilGeometry():undefined,size:5,pos:[x,16,z],id:++serial});selected=shapes.length-1;refresh();}
+ function removeSelected(){const s=shapes[selected];if(!s)return;scene.remove(s.mesh);disposeShape(s.mesh);if(s.geometry)s.geometry.dispose();shapes.splice(selected,1);selected=Math.max(0,selected-1);refresh();}
+ function duplicate(){const s=shapes[selected];if(!s||shapes.length>=12)return;const [x,z]=freeSpot();shapes.push({type:s.type,label:s.label,geometry:s.geometry?s.geometry.clone():undefined,size:s.size,rotation:[...(s.rotation||[0,0,0])],pos:[x,s.pos[1],z],id:++serial});selected=shapes.length-1;refresh();}
+ function setField(id,raw){const s=shapes[selected];if(!s||!Number.isFinite(raw))return;const [lo,hi]=spec[id],v=clamp(raw,lo,hi);if(id==='size')s.size=v;else if(id.startsWith('rotation')){s.rotation??=[0,0,0];s.rotation['xyz'.indexOf(id.slice(-1))]=v;}else s.pos[{position:0,height:1,depth:2}[id]]=v;refresh();}
+ function rotate90(i){const s=shapes[selected];if(!s)return;s.rotation??=[0,0,0];s.rotation[i]=((s.rotation[i]+270)%360)-180;refresh();}
+ $('add').onclick=add;$('dup').onclick=duplicate;$('delete').onclick=removeSelected;$('remove').onclick=removeSelected;
+ $('selected').onchange=e=>{selected=Number(e.target.value);syncUI();};
+ $('chips').onclick=e=>{const b=e.target.closest('[data-i]');if(b){selected=+b.dataset.i;syncUI();}};
+ $('mode').onclick=()=>{dragMode=dragMode==='floor'?'height':'floor';syncUI();};
+ $('edit-nums').onclick=()=>$('inspector').scrollIntoView({behavior:'smooth',block:'start'});
+ $('rot-x90').onclick=()=>rotate90(0);$('rot-y90').onclick=()=>rotate90(1);$('rot-z90').onclick=()=>rotate90(2);
+ $('rot-reset').onclick=()=>{const s=shapes[selected];if(!s)return;s.rotation=[0,0,0];refresh();};
+ Object.keys(spec).forEach(id=>{$(id).oninput=()=>setField(id,+$(id).value);$('num-'+id).onchange=()=>setField(id,+$('num-'+id).value);});
+ // Direct manipulation: pick with a ray, drag on a floor or camera-facing plane, commit (re-voxelize + reset flow) on release.
+ const ray=new THREE.Raycaster(),ndc=new THREE.Vector2(),plane=new THREE.Plane(),hitPt=new THREE.Vector3(),vp=$('viewport'),touches=new Set();
+ function setRay(e){const r=renderer.domElement.getBoundingClientRect();ndc.set((e.clientX-r.left)/r.width*2-1,-((e.clientY-r.top)/r.height)*2+1);ray.setFromCamera(ndc,camera);}
+ function pick(e){setRay(e);const hits=ray.intersectObjects(shapes.map(s=>s.mesh).filter(Boolean),true);return hits.length?hits[0].object.userData.shape:null;}
+ function endDrag(commit){if(!drag)return;const d=drag;drag=null;controls.enabled=true;if(commit&&d.moved)refresh();else if(!commit&&d.moved){d.s.pos=d.orig;refresh(false);}vp.style.cursor='';}
+ vp.addEventListener('pointerdown',e=>{touches.add(e.pointerId);if(drag&&touches.size>1){endDrag(false);return;}if(e.pointerType==='mouse'&&e.button!==0)return;if(touches.size>1)return;const s=pick(e);if(!s)return;selected=shapes.indexOf(s);syncUI();const mode=e.shiftKey?'height':dragMode,p=new THREE.Vector3(...s.pos);if(mode==='floor')plane.setFromNormalAndCoplanarPoint(new THREE.Vector3(0,1,0),p);else{const n=new THREE.Vector3(camera.position.x-p.x,0,camera.position.z-p.z).normalize();plane.setFromNormalAndCoplanarPoint(n,p);}setRay(e);if(!ray.ray.intersectPlane(plane,hitPt))return;drag={id:e.pointerId,s,mode,orig:[...s.pos],start:hitPt.clone(),moved:false};controls.enabled=false;try{vp.setPointerCapture(e.pointerId);}catch{}e.stopPropagation();vp.style.cursor='grabbing';},true);
+ vp.addEventListener('pointermove',e=>{if(!drag){if(e.pointerType==='mouse'&&!touches.size)vp.style.cursor=pick(e)?'grab':'';return;}if(e.pointerId!==drag.id)return;setRay(e);if(!ray.ray.intersectPlane(plane,hitPt))return;const d=hitPt.clone().sub(drag.start),r=v=>$('snap').checked?Math.round(v):Math.round(v*10)/10,s=drag.s;if(drag.mode==='floor'){s.pos[0]=clamp(r(drag.orig[0]+d.x),...BOUNDS.x);s.pos[2]=clamp(r(drag.orig[2]+d.z),...BOUNDS.z);}else s.pos[1]=clamp(r(drag.orig[1]+d.y),...BOUNDS.y);drag.moved=true;s.mesh.position.set(...s.pos);syncUI();},true);
+ const up=e=>{touches.delete(e.pointerId);if(drag&&e.pointerId===drag.id)endDrag(e.type==='pointerup');};vp.addEventListener('pointerup',up,true);vp.addEventListener('pointercancel',up,true);
+ document.addEventListener('keydown',e=>{if(/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)||!shapes[selected])return;const st=e.shiftKey?.1:1,s=shapes[selected];let k=null;if(e.key==='Delete'||e.key==='Backspace'){removeSelected();e.preventDefault();return;}if(e.key==='ArrowLeft')k=['position',s.pos[0]-st];else if(e.key==='ArrowRight')k=['position',s.pos[0]+st];else if(e.key==='ArrowUp')k=['depth',s.pos[2]-st];else if(e.key==='ArrowDown')k=['depth',s.pos[2]+st];else if(e.key==='PageUp')k=['height',s.pos[1]+st];else if(e.key==='PageDown')k=['height',s.pos[1]-st];if(k){e.preventDefault();setField(k[0],Math.round(k[1]*10)/10);}});
  $('speed').oninput=()=>{solver.inlet=+$('speed').value;$('speed-value').textContent=solver.inlet.toFixed(1);};$('viscosity').oninput=()=>{solver.viscosity=+$('viscosity').value;$('viscosity-value').textContent=solver.viscosity.toFixed(3);};$('toggle').onclick=()=>{running=!running;$('toggle').textContent=running?'Pause':'Run';$('state').textContent=running?'LIVE':'PAUSED';};$('reset').onclick=()=>solver.reset();
  add();
  const total=8192,geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.BufferAttribute(new Float32Array(total*3),3));const ids=new Float32Array(total);for(let i=0;i<total;i++)ids[i]=i;geometry.setAttribute('pid',new THREE.BufferAttribute(ids,1));
