@@ -1,5 +1,7 @@
 # FlowForge
 
+[Open the live demo](https://bnovarini.github.io/flowforge/) · [Source](https://github.com/bnovarini/flowforge)
+
 An open-source, browser-based 3D wind tunnel. Add a sphere, box, or cylinder and watch a GPU-computed fluid field move around it.
 
 
