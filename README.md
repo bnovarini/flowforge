@@ -145,3 +145,9 @@ The stable-fluids view can display a ray-marched smoke volume. The scalar dye is
 "Visual swirl retention" adds vorticity confinement before pressure projection. This artistic force helps retain rotating flow on the coarse grid. It does not establish physically correct turbulence, Reynolds numbers or shedding frequencies. Setting it to zero restores the original velocity update. Tracers and the earlier velocity-deficit slice remain available. Neither the D2Q9 benchmark nor the D3Q19 solver uses this confinement or smoke field.
 
 The 48-sample ray march adds rendering cost and can be slow on software graphics or large high-DPI screens. Volume lighting is approximate, not physically based scattering. Allow the plume to reach the obstacle; it starts empty after reset. The density source is continuous and fixed in grid coordinates relative to the first obstacle, not attached to the downstream wake.
+
+## Obstacle rotation controls
+
+The original 3D view has independent X/Y/Z angle sliders for each selected obstacle. Angles are in degrees, with local XYZ Euler order. The displayed mesh and solid test use the same rotation, and changes reset the flow and dye. Imports, composite shapes and primitives rotate about their own center. A rotated coarse voxel mask is still only an approximation to a curved surface.
+
+The D3Q19 view also has X/Y/Z angle controls. Apply/restart uses them and rotates both the rendered obstacle and collision geometry. A rotated cylinder is a finite cylinder of the current span length, so this is a different, unvalidated flow problem. Nonzero rotations always start fresh: the bundled unrotated cylinder warm state is not valid at another orientation. The measured Re300 shedding result applies only to the unrotated preset. Reference-area force numbers are not corrected for projected area after rotation. Zero rotation restores the original benchmark geometry. Sphere rotation has no visible geometric effect.
