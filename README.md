@@ -131,3 +131,9 @@ The earlierRe250 case at128 x64 x32, U0.08, D12 measured GPU St0.222106 over fou
 Car/F1/cow use upstream-facing composite voxel masks. Airfoil uses its analytic NACA0012-style solid sampled directly because the coarse mask could lose its thin section. Sphere/car/F1/cow/airfoil passed120-step startup checks with nonzero solid force; **their developed wakes and shedding frequencies are not verified**. They are labeled experimental. Airfoil is only about1-2 cells thick at base resolution. Composite reference-area force numbers are uncalibrated proxies, not aerodynamic coefficients.
 
 The optional192 x96 x64 grid only passed allocation/initialization, not long-run stability or interactive-performance checks. Software rendering here advances slowly; hardware-GPU performance is unmeasured. Large grids may exhaust memory. Desktop WebGL2 and float render targets are required, with at least three color attachments. Restart when changing shape/Re/grid. The exported CSV is the current run's computed force history.
+
+### Reproducing the 3D checks
+
+`benchmarks/cylinder3d-seeded.cpp` is the original scalar reference. Compile with `g++ -O3 -fopenmp benchmarks/cylinder3d-seeded.cpp -o cylinder3d-seeded`, then run `./cylinder3d-seeded 0.001 13600`. It writes a native-float state file and progress CSV to stdout. It is research code, not a calibrated solver.
+
+For the GPU continuation, install Playwright Chromium with `npx playwright install chromium`, run `npm run dev` in one terminal, and run `STEPS=4688 node benchmarks/gpu3-check.mjs > gpu3-result.json` in another. It uses the bundled sampled warm field and returns finite-field diagnostics, force history and mean-centered crossing frequency. The fixed 32-step force sampling differs from the original checkpointed measurement cadence, so minor frequency differences are expected. Software rendering can take hours. The ordinary CI suite runs short startup/regression checks, not this long continuation.
