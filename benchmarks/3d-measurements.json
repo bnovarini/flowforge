@@ -1,5 +1,5 @@
 {
-  "status": "private_work_in_progress",
+  "status": "coarse_numerical_check_complete_not_engineering_validation",
   "scalar": {
     "grid": [
       128,
@@ -20,11 +20,11 @@
     "method": "mean-centered upward lift crossings with 100-step sampling"
   },
   "limitations": [
-    "scalar frequency is not GPU frequency",
-    "spanwise flow decays toward nearly uniform wake",
     "no domain or grid convergence",
     "coarse bounce-back cylinder",
-    "warm start is sampled macro field, not exact distribution checkpoint"
+    "warm start is sampled macro field, not exact distribution checkpoint",
+    "Re250 spanwise seed decayed; wide seeded Re300 case sustained 3D flow",
+    "no mode A/B classification or matched reference force validation"
   ],
   "gpu": {
     "steps": 3602,
