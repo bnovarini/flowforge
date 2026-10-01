@@ -109,3 +109,7 @@ The selected 3D obstacle gets a **qualitative drag proxy**, split into pressure 
 The original 3D grid remains 64 x 32 x 32. Increasing it or adding vorticity confinement alone would not establish realistic 3D shedding. The next physics work is a staggered grid or validated 3D LBM, grid/time/domain convergence, improved inflow/outflow, and comparison against matched reference drag/lift/Strouhal cases.
 
 A **NACA 0012-style symmetric extruded airfoil** is also built in (12% thickness, closed trailing edge). It is aligned to the flow and has no angle-of-attack control yet. At the default coarse 3D resolution its thickness is only a few cells: do not infer lift or airfoil performance from this view.
+
+### Orientation and visible wake fix
+
+Flow is in +X, from left to right. Car/F1 noses and the cow's head now point upstream (-X); the same mirrored composite parts define both rendering and fluid voxels. The 3D shapes view includes an orange/blue center-plane overlay of the **computed velocity deficit**, making the low-speed region behind an obstacle visible when dense tracers hide it. This is a velocity-field slice, not a vorticity plot or proof of vortex shedding. The current 64 x 32 x 32 stable-fluids solver is still too diffusive for a validated shedding claim. Default inlet/viscosity remain unchanged.
