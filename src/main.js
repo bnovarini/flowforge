@@ -1,10 +1,8 @@
-import {start3D} from './lbm3d-view.js';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {FluidSolver,prelude} from './solver.js';
 import './style.css';
 import {makeShape,disposeShape,importGeometry,airfoilGeometry} from './shapes.js';
-import {startBenchmark} from './benchmark-view.js';
 const $=id=>document.getElementById(id);
 try {
  const renderer=new THREE.WebGLRenderer({antialias:true});
@@ -46,12 +44,10 @@ try {
  $('visual-style').onchange=setVisual;setVisual();
  $('curl-contrast').oninput=()=>{smokeUniforms.curlScale.value=+$('curl-contrast').value;};
  $('swirl').oninput=()=>{solver.confinement=+$('swirl').value;};
- let benchmarkMode=false,benchmarkWorker=null,wake3=null;
- $('mode').onchange=()=>{const mode=$('mode').value;benchmarkMode=mode!=='3d';$('benchmark-panel').hidden=mode!=='benchmark';$('lbm3-panel').hidden=mode!=='lbm3';$('viewport').hidden=benchmarkMode;$('benchmark-viewport').hidden=mode!=='benchmark';$('lbm3-viewport').hidden=mode!=='lbm3';$('three-controls').hidden=benchmarkMode;document.querySelector('.legend').hidden=benchmarkMode;$('stats').textContent=mode==='lbm3'?'3D D3Q19 GPU vorticity':mode==='benchmark'?'2D LBM vorticity / CPU worker':'3D GPU flow';document.querySelector('.hint').textContent='Drag to orbit · Scroll to zoom';if(mode==='benchmark'&&!benchmarkWorker)benchmarkWorker=startBenchmark();else benchmarkWorker?.postMessage({type:'pause',value:mode!=='benchmark'});if(mode==='lbm3'&&!wake3)wake3=start3D();wake3?.setActive(mode==='lbm3');};
  $('import').onchange=async()=>{const file=$('import').files[0];if(!file)return;try{if(file.size>10*1024*1024)throw Error('Keep the file below 10 MB.');if(shapes.length>=12)throw Error('Remove a shape first.');$('import-status').textContent='Voxelizing...';const geometry=importGeometry(file.name,await file.arrayBuffer());shapes.push({type:'mesh',geometry,label:file.name.replace(/[<>]/g,''),size:5,pos:[26,16,16],id:++serial});selected=shapes.length-1;refresh();$('import-status').textContent='Imported. Closed/watertight meshes work best.';}catch(e){$('import-status').textContent=e.message;}$('import').value='';};
  let forceTime=0;
  let frames=0,last=performance.now(),time=performance.now(),accumulator=0;
  function resize(){let w=$('viewport').clientWidth,h=$('viewport').clientHeight;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();}new ResizeObserver(resize).observe($('viewport'));resize();
- function animate(now){requestAnimationFrame(animate);accumulator+=Math.min(now-time,100);time=now;if(running&&!benchmarkMode&&accumulator>=1000/30){solver.step();accumulator=0;}particleMat.uniforms.points.value=solver.particles[0].texture;smokeUniforms.density.value=solver.dye[0].texture;controls.update();if(!benchmarkMode)renderer.render(scene,camera);frames++;if(!benchmarkMode&&now-forceTime>2000){const f=solver.forces(selected);$('drag').textContent=shapes.length?`Drag proxy ${f.total.toFixed(3)} (pressure ${f.pressure.toFixed(3)}, shear ${f.friction.toFixed(3)})`:'No obstacle selected';forceTime=now;}if(now-last>1000&&!benchmarkMode){$('stats').textContent=`${Math.round(frames*1000/(now-last))} fps · ${shapes.length} obstacle${shapes.length===1?'':'s'} · ${solver.steps} steps`;last=now;frames=0;}}
+ function animate(now){requestAnimationFrame(animate);accumulator+=Math.min(now-time,100);time=now;if(running&&accumulator>=1000/30){solver.step();accumulator=0;}particleMat.uniforms.points.value=solver.particles[0].texture;smokeUniforms.density.value=solver.dye[0].texture;controls.update();renderer.render(scene,camera);frames++;if(now-forceTime>2000){const f=solver.forces(selected);$('drag').textContent=shapes.length?`Drag proxy ${f.total.toFixed(3)} (pressure ${f.pressure.toFixed(3)}, shear ${f.friction.toFixed(3)})`:'No obstacle selected';forceTime=now;}if(now-last>1000){$('stats').textContent=`${Math.round(frames*1000/(now-last))} fps · ${shapes.length} obstacle${shapes.length===1?'':'s'} · ${solver.steps} steps`;last=now;frames=0;}}
  requestAnimationFrame(animate);window.flowforge={solver,shapes,renderer,diagnostics:()=>solver.diagnostics(),pause:()=>{running=false;}};
 } catch(e){$('error').hidden=false;$('error').textContent=e.message;$('stats').textContent='GPU unavailable';console.error(e);}
