@@ -137,3 +137,11 @@ The optional192 x96 x64 grid only passed allocation/initialization, not long-run
 `benchmarks/cylinder3d-seeded.cpp` is the original scalar reference. Compile with `g++ -O3 -fopenmp benchmarks/cylinder3d-seeded.cpp -o cylinder3d-seeded`, then run `./cylinder3d-seeded 0.001 13600`. It writes a native-float state file and progress CSV to stdout. It is research code, not a calibrated solver.
 
 For the GPU continuation, install Playwright Chromium with `npx playwright install chromium`, run `npm run dev` in one terminal, and run `STEPS=4688 node benchmarks/gpu3-check.mjs > gpu3-result.json` in another. It uses the bundled sampled warm field and returns finite-field diagnostics, force history and mean-centered crossing frequency. The fixed 32-step force sampling differs from the original checkpointed measurement cadence, so minor frequency differences are expected. Software rendering can take hours. The ordinary CI suite runs short startup/regression checks, not this long continuation.
+
+## Original 3D view: visual smoke preview
+
+The stable-fluids view can display a ray-marched smoke volume. The scalar dye is injected just upstream of the first obstacle, transported through the computed velocity field with trilinear semi-Lagrangian advection, removed from solid voxels and faded slowly. The plume is a visual marker, not a second fluid or a mass-conserving density solve. It resets with geometry and flow. The source follows the first obstacle; multiple obstacles affect the same plume.
+
+"Visual swirl retention" adds vorticity confinement before pressure projection. This artistic force helps retain rotating flow on the coarse grid. It does not establish physically correct turbulence, Reynolds numbers or shedding frequencies. Setting it to zero restores the original velocity update. Tracers and the earlier velocity-deficit slice remain available. Neither the D2Q9 benchmark nor the D3Q19 solver uses this confinement or smoke field.
+
+The 48-sample ray march adds rendering cost and can be slow on software graphics or large high-DPI screens. Volume lighting is approximate, not physically based scattering. Allow the plume to reach the obstacle; it starts empty after reset. The density source is continuous and fixed in grid coordinates relative to the first obstacle, not attached to the downstream wake.
