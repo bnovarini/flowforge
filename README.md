@@ -113,3 +113,21 @@ A **NACA 0012-style symmetric extruded airfoil** is also built in (12% thickness
 ### Orientation and visible wake fix
 
 Flow is in +X, from left to right. Car/F1 noses and the cow's head now point upstream (-X); the same mirrored composite parts define both rendering and fluid voxels. The 3D shapes view includes an orange/blue center-plane overlay of the **computed velocity deficit**, making the low-speed region behind an obstacle visible when dense tracers hide it. This is a velocity-field slice, not a vorticity plot or proof of vortex shedding. The current 64 x 32 x 32 stable-fluids solver is still too diffusive for a validated shedding claim. Default inlet/viscosity remain unchanged.
+
+## 3D D3Q19 wake view
+
+Select **3D wake / GPU D3Q19 LBM**. The default cylinder preset uses Re300, U=0.06 lattice units, D=12 cells, and a 128 x64 x64 grid (span5.33D). This is a true three-dimensional19-distribution lattice-Boltzmann computation with TRT collision, voxel bounce-back, periodic lateral boundaries and an approximate open outlet. Red/blue volume points show opposite signs of spanwise vorticity; green reflects streamwise vorticity. Orbit the view to inspect depth. These are sampled field points, not a plane, scripted vortices or a full-resolution volume raycast.
+
+The cylinder starts from a **computed warm state**: an independently computed13,600-step scalar D3Q19 run with a single random transverse seed of +/-0.5%U. Its velocity/density was sampled32 x16 x8, interpolated and converted to equilibrium GPU distributions. This is not an exact microscopic checkpoint. GPU step count starts at zero. No random or vorticity forcing is applied during evolution. Fresh uniform start and the earlierRe250 warm state remain available. Other shapes start fresh rather than borrowing the cylinder wake.
+
+### Measured result and limits
+
+The seededRe300 GPU continuation stayed finite through4,688 steps. Four complete mean-centered lift periods over steps640-4,688 gave period884.569 lattice steps and **St=0.226099**, about13% above the0.2 ballpark, not an exact hit. Spanwise velocityRMS was0.00315 (5.25%U) and persisted/gained strength across the cycles. A stride-two late-field check found wake streamwise-vorticityRMS0.00232 and span-dependent velocity variationRMS0.00354. The volume evolves with span-dependent structure, not an extruded2D street. No modeA/B classification is claimed.
+
+This is a coarse-grid numerical check, **not engineering validation**. No grid/domain convergence, matched reference-force validation, turbulence model or interpolated curved-wall treatment has been completed. The TRT product0.001 is an empirical stability choice; the usual3/16 on a smaller cylinder became unstable. Raw Cd near2 is not a credible aerodynamic prediction. Warm-field interpolation produces settling transients; the frequency window excludes the first600 GPU steps. Measurement JSON and force samples are in `benchmarks/3d-measurements.json` and `benchmarks/gpu3-seeded-force-history.json`.
+
+The earlierRe250 case at128 x64 x32, U0.08, D12 measured GPU St0.222106 over four periods but its initial sinusoidal spanwise seed decayed. It stayed nearly spanwise-uniform. The independent scalarRe250 frequency0.22275 is a separate measurement. A3D computation alone does not prove a 3D instability.
+
+Car/F1/cow use upstream-facing composite voxel masks. Airfoil uses its analytic NACA0012-style solid sampled directly because the coarse mask could lose its thin section. Sphere/car/F1/cow/airfoil passed120-step startup checks with nonzero solid force; **their developed wakes and shedding frequencies are not verified**. They are labeled experimental. Airfoil is only about1-2 cells thick at base resolution. Composite reference-area force numbers are uncalibrated proxies, not aerodynamic coefficients.
+
+The optional192 x96 x64 grid only passed allocation/initialization, not long-run stability or interactive-performance checks. Software rendering here advances slowly; hardware-GPU performance is unmeasured. Large grids may exhaust memory. Desktop WebGL2 and float render targets are required, with at least three color attachments. Restart when changing shape/Re/grid. The exported CSV is the current run's computed force history.
