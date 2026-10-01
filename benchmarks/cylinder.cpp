@@ -1,7 +1,0 @@
-// Independent scalar implementation of the browser D2Q9 benchmark algorithm.
-#include <vector>
-#include <cmath>
-#include <fstream>
-#include <iostream>
-using namespace std;
-int main(){const int W=320,H=128,N=W*H;int cx[9]={0,1,0,-1,0,1,-1,-1,1},cy[9]={0,0,1,0,-1,1,1,-1,-1},opp[9]={0,3,4,1,2,7,8,5,6};double wt[9]={4./9,1./9,1./9,1./9,1./9,1./36,1./36,1./36,1./36};const double U=.06,D=20,nu=U*D/100,omega=1/(.5+3*nu);vector<float> a(N*9),b(N*9);vector<char> solid(N);auto eq=[&](int q,double rho,double ux,double uy){double cu=3*(cx[q]*ux+cy[q]*uy);return wt[q]*rho*(1+cu+.5*cu*cu-1.5*(ux*ux+uy*uy));};for(int y=0;y<H;y++)for(int x=0;x<W;x++){int i=y*W+x;solid[i]=hypot(x-64.,y-64.3)<D/2;for(int q=0;q<9;q++)a[i*9+q]=eq(q,1,U,.0001*sin(6.283*y/H));}ofstream out("/tmp/lift.csv");out<<"step,drag,lift\n";for(int t=0;t<24000;t++){double fx=0,fy=0;for(int y=0;y<H;y++)for(int x=0;x<W;x++){int i=y*W+x;if(solid[i])continue;double f[9],rho=0,ux=0,uy=0;for(int q=0;q<9;q++){int sx=x-cx[q],sy=(y-cy[q]+H)%H,j=sy*W+sx;if(sx<0){f[q]=eq(q,1,U,0);}else if(sx>=W){f[q]=a[(y*W+W-1)*9+q];}else if(solid[j]){f[q]=a[i*9+opp[q]];fx-=2*f[q]*cx[q];fy-=2*f[q]*cy[q];}else f[q]=a[j*9+q];rho+=f[q];ux+=cx[q]*f[q];uy+=cy[q]*f[q];}ux/=rho;uy/=rho;if(x==0){rho=1;ux=U;uy=0;}for(int q=0;q<9;q++)b[i*9+q]=f[q]+omega*(eq(q,rho,ux,uy)-f[q]);}a.swap(b);if(t%10==0)out<<t<<","<<fx<<","<<fy<<"\n";if(t%4000==0)cerr<<t<<" "<<fx<<" "<<fy<<"\n";}ofstream field("/tmp/cylinder-field.bin",ios::binary);field.write((char*)a.data(),a.size()*4);}
