@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import {test,expect} from '@playwright/test';
 test('GPU flow evolves, stays finite, respects obstacle, and controls work',async({page},testInfo)=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error'&&!m.text().includes('fonts.googleapis'))errors.push(m.text());});
- await page.goto('/');await page.waitForFunction(()=>window.flowforge);await page.locator('#remove').click();await page.locator('#shape').selectOption('sphere');await page.locator('#add').click();await page.waitForFunction(()=>window.flowforge?.solver.steps>=30,null,{timeout:110000});
+ await page.goto('/?grid=standard');await page.waitForFunction(()=>window.flowforge);await page.locator('#remove').click();await page.locator('#shape').selectOption('sphere');await page.locator('#add').click();await page.waitForFunction(()=>window.flowforge?.solver.steps>=30,null,{timeout:110000});
  await page.getByRole('button',{name:'Pause',exact:true}).click();
  const result=await page.evaluate(()=>window.flowforge.diagnostics());
  expect(result.finite).toBe(true);expect(result.max).toBeGreaterThan(1);expect(result.max).toBeLessThan(10);expect(result.mean).toBeGreaterThan(.1);
@@ -18,7 +18,7 @@ test('GPU flow evolves, stays finite, respects obstacle, and controls work',asyn
  console.log(JSON.stringify({result,field}));
 });
 test('multiple obstacles and extreme controls remain finite',async({page})=>{
- await page.goto('/');await page.waitForFunction(()=>window.flowforge?.solver.steps>=2);
+ await page.goto('/?grid=standard');await page.waitForFunction(()=>window.flowforge?.solver.steps>=2);
  await page.locator('#shape').selectOption('cylinder');await page.locator('#add').click();
  await page.locator('#speed').fill('2');await page.locator('#speed').dispatchEvent('input');
  await page.locator('#viscosity').fill('0.08');await page.locator('#viscosity').dispatchEvent('input');
