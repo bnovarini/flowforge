@@ -2,7 +2,6 @@
 
 An open-source, browser-based 3D wind tunnel. Add a sphere, box, or cylinder and watch a GPU-computed fluid field move around it.
 
-![FlowForge running around a sphere](8-screenshot.png)
 
 **An interactive CFD experiment, not an engineering-grade solver.** Do not use its output to size equipment, validate safety, or make design decisions.
 
@@ -63,7 +62,7 @@ Known limits:
 - Numerical diffusion from semi-Lagrangian advection; no turbulence model or compressibility.
 - No mesh import, surface forces, physical calibration, or moving solids yet.
 - Desktop-first. WebGL GPU performance and floating-point support vary. Software rendering is much slower.
-- No deployed demo is included. Build and run locally, or host `dist/` as a static site.
+- A static demo can be published with the included GitHub Pages workflow.
 
 ## Roadmap
 
