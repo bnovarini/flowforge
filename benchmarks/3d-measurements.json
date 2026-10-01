@@ -1,0 +1,93 @@
+{
+  "status": "private_work_in_progress",
+  "scalar": {
+    "grid": [
+      128,
+      64,
+      32
+    ],
+    "Re": 250,
+    "D": 12,
+    "U": 0.08,
+    "TRT_product": 0.001,
+    "St": 0.2227476703306976,
+    "period": 673.4077163514469,
+    "cycles": 10,
+    "window": [
+      4000,
+      11800
+    ],
+    "method": "mean-centered upward lift crossings with 100-step sampling"
+  },
+  "limitations": [
+    "scalar frequency is not GPU frequency",
+    "spanwise flow decays toward nearly uniform wake",
+    "no domain or grid convergence",
+    "coarse bounce-back cylinder",
+    "warm start is sampled macro field, not exact distribution checkpoint"
+  ],
+  "gpu": {
+    "steps": 3602,
+    "St": 0.22210563692308932,
+    "period": 675.3543137310917,
+    "cycles": 4,
+    "window": [
+      602,
+      3602
+    ],
+    "sample_stride": 60,
+    "warm": "macro interpolated from scalar6700; equilibrium initialization",
+    "finite": true,
+    "max_velocity": 0.13925903053517014,
+    "spanwiseRms": 2.006738708295765e-06
+  },
+  "seeded_scalar": {
+    "grid": [
+      128,
+      64,
+      64
+    ],
+    "Re": 300,
+    "U": 0.06,
+    "D": 12,
+    "TRT_product": 0.001,
+    "steps": 15300,
+    "spanwiseRms": 0.0031121306715872986,
+    "status": "rising nonuniform spanwise flow; grid convergence not tested"
+  },
+  "seeded_gpu": {
+    "steps": 4688,
+    "grid": [
+      128,
+      64,
+      64
+    ],
+    "Re": 300,
+    "D": 12,
+    "U": 0.06,
+    "St": 0.2260986978641759,
+    "period": 884.5694463934765,
+    "cycles": 4,
+    "window": [
+      640,
+      4688
+    ],
+    "sampling_stride": "30/40/48/32 samples during checkpointed evolution",
+    "spanwiseRms": 0.0031496017459395407,
+    "omegaX_RMS_wake_stride2": 0.002315605959663571,
+    "spanVelocityVariationRMS_stride2": 0.003535353082539442,
+    "finite": true,
+    "max_velocity": 0.11209892298011295,
+    "density": [
+      0.9875426292419434,
+      1.00809645652771
+    ],
+    "macro_warm_start_from_scalar": 13600,
+    "macro_sampling": [
+      32,
+      16,
+      8
+    ],
+    "limits": "coarse grid, approximate open outlet, periodic lateral boundaries, empirical TRT, no convergence or mode classification"
+  }
+}
