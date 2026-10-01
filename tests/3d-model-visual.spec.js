@@ -1,0 +1,2 @@
+import {test,expect} from '@playwright/test';
+for(const shape of ['car','f1','cow','airfoil'])test(`3D LBM ${shape} render`,async({page})=>{await page.goto('/');await page.locator('#mode').selectOption('lbm3');await page.locator('#lbm3-shape').selectOption(shape);await page.locator('#lbm3-reset').click();await page.waitForFunction(()=>window.lbm3.solver.steps>3);await page.evaluate(()=>window.lbm3.pause());expect(await page.evaluate(()=>window.lbm3.solver.field().finite)).toBe(true);await page.screenshot({path:`/downloads/lbm3-${shape}.png`});});
