@@ -2,7 +2,8 @@ const has=typeof location!=='undefined';
 const get=k=>{try{return localStorage.getItem(k);}catch{return null;}};
 const param=has?new URLSearchParams(location.search).get('grid'):null;
 const manual=param||(has?get('flowforge-grid'):null);
-export const MANUAL=manual==='standard'||manual==='high';
+const SCALE={standard:1,high:2,highplus:3,ultra:4};
+export const MANUAL=manual in SCALE;
 function probe(){
  if(!has)return {s:2,why:'default'};
  let gpu='';
@@ -15,6 +16,6 @@ function probe(){
  if(cores<=4||mem<=4)return {s:1,why:'low core count or memory',gpu};
  return {s:2,why:'capable GPU',gpu};
 }
-const auto=MANUAL?{s:manual==='standard'?1:2,why:'your setting'}:probe();
+const auto=MANUAL?{s:SCALE[manual],why:'your setting'}:probe();
 export const S=auto.s,AUTO_WHY=auto.why,AUTO_GPU=auto.gpu||'';
 export const NX=64*S,NY=32*S,NZ=32*S,W=NX*8,H=NY*NZ/8;
