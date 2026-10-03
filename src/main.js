@@ -18,7 +18,7 @@ try {
  const solver=new FluidSolver(renderer);const shapes=[];let selected=0;let running=true;let serial=0;
  const meshFor=makeShape;
  const BOUNDS={x:[8,56],y:[5,27],z:[5,27]};
- const spec={size:[2,9],position:BOUNDS.x,height:BOUNDS.y,depth:BOUNDS.z,'rotation-x':[-180,180],'rotation-y':[-180,180],'rotation-z':[-180,180]};
+ const spec={size:[2,9],position:BOUNDS.x,height:BOUNDS.y,depth:BOUNDS.z,'rotation-x':[-180,180],'rotation-y':[-180,180],'rotation-z':[-180,180],'scale-x':[.25,3],'scale-y':[.25,3],'scale-z':[.25,3]};
  const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
  const esc=t=>String(t).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
  const outline=new THREE.Box3Helper(new THREE.Box3(),'#68e1b6');outline.visible=false;scene.add(outline);
@@ -30,16 +30,17 @@ try {
   Object.keys(spec).forEach(id=>{$(id).disabled=!s;$('num-'+id).disabled=!s;});
   ['remove','delete','dup','edit-nums','rot-x90','rot-y90','rot-z90','rot-reset'].forEach(id=>$(id).disabled=!s);
   $('dup').disabled=!s||shapes.length>=12;
-  if(s){s.rotation??=[0,0,0];const v={size:s.size,position:s.pos[0],height:s.pos[1],depth:s.pos[2],'rotation-x':s.rotation[0],'rotation-y':s.rotation[1],'rotation-z':s.rotation[2]};
+  $('axis-sizes').hidden=!(s&&['box','cylinder','airfoil'].includes(s.type));
+  if(s){s.rotation??=[0,0,0];const v={size:s.size,position:s.pos[0],height:s.pos[1],depth:s.pos[2],'rotation-x':s.rotation[0],'rotation-y':s.rotation[1],'rotation-z':s.rotation[2],'scale-x':(s.scale||[1,1,1])[0],'scale-y':(s.scale||[1,1,1])[1],'scale-z':(s.scale||[1,1,1])[2]};
    for(const id in v){$(id).value=v[id];$('num-'+id).value=+(+v[id]).toFixed(2);}
-   $('size-value').textContent=s.size;['x','y','z'].forEach((a,i)=>{$('rotation-'+a+'-value').textContent=s.rotation[i]+'°';});}
+   $('size-value').textContent=s.size;['x','y','z'].forEach((a,i)=>{$('scale-'+a+'-value').textContent=(+(s.scale||[1,1,1])[i]).toFixed(2);});['x','y','z'].forEach((a,i)=>{$('rotation-'+a+'-value').textContent=s.rotation[i]+'°';});}
   $('add').disabled=shapes.length>=12;$('mode').textContent=dragMode==='floor'?'Drag: floor':'Drag: height';updateOutline();}
  function refresh(reset=true){shapes.forEach(s=>{if(s.mesh){scene.remove(s.mesh);disposeShape(s.mesh);}s.mesh=meshFor(s);s.mesh.traverse(o=>{o.userData.shape=s;});scene.add(s.mesh);});solver.setShapes(shapes);if(reset)solver.reset();syncUI();}
  function freeSpot(){const c=[[26,16],[33,16],[40,16],[47,16],[26,10],[33,22],[40,10],[47,22],[19,16],[19,10],[19,22]];return c.find(([x,z])=>shapes.every(s=>Math.hypot(s.pos[0]-x,s.pos[2]-z)>=8))||[26,16];}
  function add(){if(shapes.length>=12)return;const [x,z]=freeSpot();shapes.push({type:$('shape').value,geometry:$('shape').value==='airfoil'?airfoilGeometry():undefined,size:5,pos:[x,16,z],id:++serial});selected=shapes.length-1;showSel=true;refresh();}
  function removeSelected(){const s=shapes[selected];if(!s)return;scene.remove(s.mesh);disposeShape(s.mesh);if(s.geometry)s.geometry.dispose();shapes.splice(selected,1);selected=Math.max(0,selected-1);refresh();}
- function duplicate(){const s=shapes[selected];if(!s||shapes.length>=12)return;const [x,z]=freeSpot();shapes.push({type:s.type,label:s.label,geometry:s.geometry?s.geometry.clone():undefined,size:s.size,rotation:[...(s.rotation||[0,0,0])],pos:[x,s.pos[1],z],id:++serial});selected=shapes.length-1;showSel=true;refresh();}
- function setField(id,raw){const s=shapes[selected];if(!s||!Number.isFinite(raw))return;showSel=true;const [lo,hi]=spec[id],v=clamp(raw,lo,hi);if(id==='size')s.size=v;else if(id.startsWith('rotation')){s.rotation??=[0,0,0];s.rotation['xyz'.indexOf(id.slice(-1))]=v;}else s.pos[{position:0,height:1,depth:2}[id]]=v;refresh();}
+ function duplicate(){const s=shapes[selected];if(!s||shapes.length>=12)return;const [x,z]=freeSpot();shapes.push({type:s.type,label:s.label,geometry:s.geometry?s.geometry.clone():undefined,size:s.size,scale:s.scale?[...s.scale]:undefined,rotation:[...(s.rotation||[0,0,0])],pos:[x,s.pos[1],z],id:++serial});selected=shapes.length-1;showSel=true;refresh();}
+ function setField(id,raw){const s=shapes[selected];if(!s||!Number.isFinite(raw))return;showSel=true;const [lo,hi]=spec[id],v=clamp(raw,lo,hi);if(id==='size')s.size=v;else if(id.startsWith('scale')){s.scale??=[1,1,1];s.scale['xyz'.indexOf(id.slice(-1))]=v;}else if(id.startsWith('rotation')){s.rotation??=[0,0,0];s.rotation['xyz'.indexOf(id.slice(-1))]=v;}else s.pos[{position:0,height:1,depth:2}[id]]=v;refresh();}
  function rotate90(i){const s=shapes[selected];if(!s)return;s.rotation??=[0,0,0];s.rotation[i]=((s.rotation[i]+270)%360)-180;refresh();}
  $('add').onclick=add;$('dup').onclick=duplicate;$('delete').onclick=removeSelected;$('remove').onclick=removeSelected;
  $('selected').onchange=e=>{selected=Number(e.target.value);showSel=true;syncUI();};
